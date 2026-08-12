@@ -78,7 +78,9 @@ ntdll's RtlDecompressBuffer for the xpress8 chunks. No external dependencies.
 
 .PARAMETER Path
   Path to a .xlsx workbook with an embedded Power Pivot model, or to a legacy
-  .pbix file whose DataModel stream is an uncompressed ABF.
+  PBIX file whose DataModel stream is an uncompressed ABF. (Do not start a help
+  line with '.pbix' or any other dot-word: the help parser reads it as an
+  unknown directive and silently discards this entire comment block.)
 
 .PARAMETER ListFiles
   List every embedded backup file: size, offset and friendly name.
