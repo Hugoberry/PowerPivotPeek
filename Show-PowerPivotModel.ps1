@@ -31,6 +31,13 @@ ntdll's RtlDecompressBuffer for the xpress8 chunks. No external dependencies.
 
 #>
 
+# Keep the comment-based help block below as the LAST comment before the param
+# block. Test-ScriptFileInfo reads .DESCRIPTION via $ast.GetHelpContent(), which
+# binds to the final contiguous comment run before the script body -- and
+# #Requires tokenizes as a comment. Moving the line below underneath the help
+# block hides the description and breaks Publish-Script.
+#Requires -Version 5.1
+
 <#
 .SYNOPSIS
   Peek into the Power Pivot / Analysis Services data model embedded in an .xlsx
@@ -51,9 +58,13 @@ ntdll's RtlDecompressBuffer for the xpress8 chunks. No external dependencies.
   The embedded files are compressed with 'xpress8', which is a chunked framing
   around raw MS-XCA Xpress (plain LZ77, no Huffman). Windows can already decode
   that: ntdll's RtlDecompressBuffer with COMPRESSION_FORMAT_XPRESS (3) takes a
-  raw MS-XCA buffer, which is exactly what each chunk body is. Note that
-  cabinet.dll's Compress/Decompress will NOT work here, because those wrap the
-  data in their own container format.
+  raw MS-XCA buffer, which is exactly what each chunk body is.
+
+  Note that cabinet.dll's Compress/Decompress is the wrong tool here. In buffer
+  mode it expects its own container header; the COMPRESS_RAW flag does accept a
+  bare buffer, but only in block mode, where you must supply the exact original
+  uncompressed size and drive the blocks yourself. RtlDecompressBuffer takes the
+  bare buffer directly, which is why this fits in a single P/Invoke.
 
   This is deliberately a *glimpse*. All the heavy VertiPaq work - column
   segments, RLE runs, dictionaries, hash indexes - is left to pbixray
@@ -104,8 +115,6 @@ ntdll's RtlDecompressBuffer for the xpress8 chunks. No external dependencies.
 .LINK
   https://github.com/Hugoberry/pbixray
 #>
-
-#Requires -Version 5.1
 
 [CmdletBinding()]
 param(

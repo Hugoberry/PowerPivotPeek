@@ -43,7 +43,8 @@ Services backup file (ABF)** — the same structure a `.pbix` keeps in its
 a trench coat; `msmdsrv.exe` shows up in Process Explorer when you use it.
 
 Getting at that model normally means opening Excel. This script reads it straight
-off disk, in about 130 lines of PowerShell.
+off disk in under 200 lines of PowerShell — and the part that actually does the
+decompression is about thirty of them.
 
 ## The trick: Windows already has the decompressor
 
@@ -67,10 +68,16 @@ public static extern int RtlDecompressBuffer(
     ushort fmt, byte[] dst, int dstLen, byte[] src, int srcLen, out int finalSize);
 ```
 
-**A warning that cost me time:** `cabinet.dll`'s `Compress`/`Decompress` API will
-*not* decode these chunks, even set to the Xpress algorithm. It wraps data in its
-own container with its own header. `RtlDecompressBuffer` is the one that accepts
-a bare buffer, which is exactly what an xpress8 chunk body is.
+**The detour that cost me time:** the obvious candidate is `cabinet.dll`'s
+Compression API (`CreateDecompressor` / `Decompress`). In its default buffer
+mode it will not read these chunks — it expects data wrapped in its own
+container header. You *can* opt into raw with the `COMPRESS_RAW` flag, but that
+puts you in block mode, where you must supply the exact original uncompressed
+size and manage blocks yourself.
+
+`RtlDecompressBuffer` skips all of it: bare input buffer, output buffer, output
+size, done. It is documented as a driver DDI, but `ntdll` exports it and user
+mode can call it — which is the whole reason this fits in a P/Invoke.
 
 ## How it reads the file
 
@@ -144,7 +151,7 @@ This is deliberately a *glimpse*, not a parser.
 
 If you want tables, relationships, DAX measures and reconstructed row data as
 DataFrames, you want **[pbixray](https://github.com/Hugoberry/pbixray)**. This
-script is the 130-line window into the same container.
+script is just a small window into the same container.
 
 ## Install without the Gallery
 
