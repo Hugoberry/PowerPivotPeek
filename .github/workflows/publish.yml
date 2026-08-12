@@ -1,0 +1,68 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+env:
+  SCRIPT: Show-PowerPivotModel.ps1
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -SkipPublisherCheck
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          # PSAvoidUsingWriteHost is intentional: this script is a console report.
+          $findings = Invoke-ScriptAnalyzer -Path ./$env:SCRIPT `
+            -Severity Error, Warning `
+            -ExcludeRule PSAvoidUsingWriteHost
+          $findings | Format-Table -AutoSize | Out-Host
+          if ($findings | Where-Object Severity -eq 'Error') {
+            throw "PSScriptAnalyzer reported errors."
+          }
+
+      - name: Validate PSScriptInfo
+        shell: pwsh
+        run: Test-ScriptFileInfo -Path ./$env:SCRIPT | Format-List | Out-Host
+
+      - name: Check version matches tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $scriptVersion = (Test-ScriptFileInfo -Path ./$env:SCRIPT).Version.ToString()
+          $tagVersion = "${{ github.ref_name }}".TrimStart('v')
+          if ($scriptVersion -ne $tagVersion) {
+            throw "Tag is v$tagVersion but .VERSION in $env:SCRIPT is $scriptVersion."
+          }
+          Write-Host "Version $scriptVersion matches tag."
+
+  publish:
+    name: Publish to PowerShell Gallery
+    needs: analyze
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    environment: powershell-gallery
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish-Script
+        shell: pwsh
+        env:
+          NUGET_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          if (-not $env:NUGET_KEY) { throw "PSGALLERY_API_KEY secret is not set." }
+          Publish-Script -Path ./$env:SCRIPT -NuGetApiKey $env:NUGET_KEY -Verbose

@@ -1,0 +1,7 @@
+*.nupkg
+*.idf
+*.idfmeta
+out/
+samples/*.xlsx
+samples/*.pbix
+.DS_Store
