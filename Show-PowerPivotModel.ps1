@@ -269,8 +269,13 @@ $logEntry = $vdList[-1]
 $logLen = if ($errorCode) { $logEntry.Size - 4 } else { $logEntry.Size }
 $log = ConvertFrom-XmlBytes (Get-ByteRange $buf $logEntry.Offset $logLen)
 $groups = $log.SelectNodes("//*[local-name()='FileGroup']")
+# Every group persists under the database folder, so the shortest
+# PersistLocationPath is that root. Picking a fixed group index instead lands on
+# a cube/dimension subfolder and leaves most paths as absolute temp paths from
+# whichever machine authored the workbook.
 $persistRoot = ''
-if ($groups.Count -gt 1) { $persistRoot = (Get-NodeText $groups.Item(1) 'PersistLocationPath') + '\' }
+$roots = @($groups | ForEach-Object { Get-NodeText $_ 'PersistLocationPath' } | Where-Object { $_ } | Sort-Object Length)
+if ($roots.Count) { $persistRoot = $roots[0] + '\' }
 
 # Join friendly paths (backup log) to offsets/sizes (virtual directory).
 $files = New-Object System.Collections.Generic.List[object]
