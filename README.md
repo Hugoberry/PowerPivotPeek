@@ -1,7 +1,7 @@
 # PowerPivotPeek
 
-[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/Show-PowerPivotModel.svg)](https://www.powershellgallery.com/packages/Show-PowerPivotModel)
-[![Downloads](https://img.shields.io/powershellgallery/dt/Show-PowerPivotModel.svg)](https://www.powershellgallery.com/packages/Show-PowerPivotModel)
+[![PowerShell Gallery](https://img.shields.io/powershellgallery/v/Show-PowerPivotModel)](https://www.powershellgallery.com/packages/Show-PowerPivotModel)
+[![Downloads](https://img.shields.io/powershellgallery/dt/Show-PowerPivotModel)](https://www.powershellgallery.com/packages/Show-PowerPivotModel)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Look inside the Power Pivot data model hidden in an Excel workbook — with nothing
